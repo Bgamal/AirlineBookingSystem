@@ -3,8 +3,18 @@
   <Folder Name="/BuildingBlocks/Common/" />
   <Folder Name="/BuildingBlocks/Contracts/" />
   <Folder Name="/Services/" />
-  <Folder Name="/Services/Booking/" />
-  <Folder Name="/Services/Flight/" />
+  <Folder Name="/Services/Booking/">
+    <Project Path="AirlineBookingSystem.Bookings.Api/AirlineBookingSystem.Bookings.Api.csproj" Id="cd152f4e-b3e0-4581-adf7-f668df39bc7d" />
+    <Project Path="AirlineBookingSystem.Bookings.Application/AirlineBookingSystem.Bookings.Application.csproj" Id="77144a35-9790-4e95-88b4-5c9dde15ace3" />
+    <Project Path="AirlineBookingSystem.Bookings.Core/AirlineBookingSystem.Bookings.Core.csproj" Id="81375392-b971-4b03-b34d-6c353a326655" />
+    <Project Path="AirlineBookingSystem.Bookings.Infrastructure/AirlineBookingSystem.Bookings.Infrastructure.csproj" Id="e85757f7-5f7e-446a-90ff-1eec2c8886f1" />
+  </Folder>
+  <Folder Name="/Services/Flight/">
+    <Project Path="AirlineBookingSystem.Flights.Api/AirlineBookingSystem.Flights.Api.csproj" Id="4f7de301-9c23-4810-83b8-0f641ef6f0c4" />
+    <Project Path="AirlineBookingSystem.Flights.Application/AirlineBookingSystem.Flights.Application.csproj" Id="966a51b7-7aa6-4681-b508-ca61be711177" />
+    <Project Path="AirlineBookingSystem.Flights.Core/AirlineBookingSystem.Flights.Core.csproj" Id="4840c6b0-7c76-4b9f-9791-d43a8d90e232" />
+    <Project Path="AirlineBookingSystem.Flights.Infrastructure/AirlineBookingSystem.Flights.Infrastructure.csproj" Id="0e5dd27b-14ea-4c4a-9f4b-4a2a23fc1324" />
+  </Folder>
   <Folder Name="/Services/Notification/" />
   <Folder Name="/Services/Payment/" />
 </Solution>
