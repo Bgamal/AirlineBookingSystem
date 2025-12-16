@@ -1,0 +1,93 @@
+# .gitignore for .NET projects (works for .NET 6/8/10 and Visual Studio)
+# Recommended for SDK-style projects
+
+# Build artifacts
+bin/
+obj/
+out/
+artifacts/
+
+# Publish output
+publish/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+.nuget/packages/
+
+# Dotnet local tool manifests and SDK layout
+.dotnet/
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+coverage*.xml
+
+# Database & LocalDB
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# Certificates and keys
+*.pfx
+*.key
+
+# User secrets (local development secrets)
+secrets.json
+
+# IIS Express
+/.vs/*/applicationhost.config
+
+# Rider caches
+.idea/
+
+# Misc
+*.log
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.cache
+*.ilk
+*.meta
+*.obj
+*.tmp
+*.temp
+*.log
+*.vsix
+
+# JetBrains Rider plugin directory
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Uncomment if you want to ignore build outputs created by Visual Studio's publish
+# /bin/Release/
+# /bin/Debug/
+
+# End of file
