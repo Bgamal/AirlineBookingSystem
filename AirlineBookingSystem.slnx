@@ -1,1 +1,10 @@
-<Solution />
+<Solution>
+  <Folder Name="/BuildingBlocks/" />
+  <Folder Name="/BuildingBlocks/Common/" />
+  <Folder Name="/BuildingBlocks/Contracts/" />
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Booking/" />
+  <Folder Name="/Services/Flight/" />
+  <Folder Name="/Services/Notification/" />
+  <Folder Name="/Services/Payment/" />
+</Solution>
