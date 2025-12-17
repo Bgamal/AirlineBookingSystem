@@ -1,4 +1,6 @@
 using System.Data;
+using System.Reflection;
+using AirlineBookingSystem.Bookings.Application.Handlers;
 using AirlineBookingSystem.Bookings.Core.Repositories;
 using AirlineBookingSystem.Bookings.Infrastructure.Repositories;
 using Microsoft.Data.SqlClient;
@@ -25,6 +27,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 RegisterApplicationSrvices(builder);
+
+//Register MediatR Services
+var assemblies =new Assembly[]
+    {
+        Assembly.GetExecutingAssembly(),
+        typeof(CreateBookingHandler).Assembly,
+        typeof(GetBookingHandler).Assembly
+    };
+builder.Services.AddMediatR(cfg =>cfg.RegisterServicesFromAssemblies(assemblies));
 
 var app = builder.Build();
 
