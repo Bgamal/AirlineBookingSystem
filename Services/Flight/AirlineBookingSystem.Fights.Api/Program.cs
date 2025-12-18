@@ -1,7 +1,10 @@
+
+using AirlineBookingSystem.Fights.Application.Handlers;
 using AirlineBookingSystem.Fights.Core.Repositories;
 using AirlineBookingSystem.Fights.Infrastructure.Repositories;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +23,18 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 RegisterApplicationSrvices(builder);
+
+
+//Register MediatR Services
+var assemblies = new Assembly[]
+    {
+        Assembly.GetExecutingAssembly(),
+        typeof(CreateFlightHandler).Assembly,
+        typeof(DeleteFlightHandler).Assembly,
+         typeof(GetAllFlightsHandler).Assembly
+    };
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
