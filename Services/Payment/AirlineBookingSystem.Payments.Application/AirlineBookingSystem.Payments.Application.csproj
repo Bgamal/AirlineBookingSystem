@@ -12,9 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Commands\" />
-    <Folder Include="Handlers\" />
     <Folder Include="Queries\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AirlineBookingSystem.Payments.Core\AirlineBookingSystem.Payments.Core.csproj" />
   </ItemGroup>
 
 </Project>
