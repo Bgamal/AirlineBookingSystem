@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AirlineBookingSystem.Fights.Application\AirlineBookingSystem.Fights.Application.csproj" />
+    <ProjectReference Include="..\AirlineBookingSystem.Fights.Core\AirlineBookingSystem.Fights.Core.csproj" />
+    <ProjectReference Include="..\AirlineBookingSystem.Fights.Infrastructure\AirlineBookingSystem.Fights.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
