@@ -1,7 +1,6 @@
 using AirlineBookingSystem.Notifications.Application.Handlers;
 using AirlineBookingSystem.Notifications.Application.Interfaces;
 using AirlineBookingSystem.Notifications.Application.Services;
-using AirlineBookingSystem.Notifications.Core.Entities;
 using AirlineBookingSystem.Notifications.Core.Repositories;
 using AirlineBookingSystem.Notifications.Infrastructure.Repositories;
 using Microsoft.Data.SqlClient;
@@ -15,26 +14,27 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-// Configure Swagger (Swashbuckle)
+builder.Services.AddControllers();
+// Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Use built-in OpenAPI support
+builder.Services.AddOpenApi();
+
+// Add authorization services (required when using app.UseAuthorization())
+builder.Services.AddAuthorization();
+
+// Application Services
+builder.Services.AddScoped<INotificationService, NotificationService>();
 RegisterApplicationSrvices(builder);
 
-//Register MediatR Services
+// Register MediatR Services
 var assemblies = new Assembly[]
 {
     Assembly.GetExecutingAssembly(),
-        typeof(SendNotificationHandler).Assembly
-
-    }
-;
+    typeof(SendNotificationHandler).Assembly
+};
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
-//Application Services
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 var app = builder.Build();
 
@@ -53,9 +53,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
 void RegisterApplicationSrvices(WebApplicationBuilder builder)
 {
     // Register application services here
-    // services.AddScoped<IYourService, YourServiceImplementation>();
     builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 }

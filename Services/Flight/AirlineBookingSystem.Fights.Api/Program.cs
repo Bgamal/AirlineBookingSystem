@@ -1,4 +1,3 @@
-
 using AirlineBookingSystem.Fights.Application.Handlers;
 using AirlineBookingSystem.Fights.Core.Repositories;
 using AirlineBookingSystem.Fights.Infrastructure.Repositories;
@@ -16,14 +15,13 @@ builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionStri
 
 // Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-// Configure Swagger (Swashbuckle)
+// Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-RegisterApplicationSrvices(builder);
+// Use built-in OpenAPI support
+builder.Services.AddOpenApi();
 
+RegisterApplicationSrvices(builder);
 
 //Register MediatR Services
 var assemblies = new Assembly[]

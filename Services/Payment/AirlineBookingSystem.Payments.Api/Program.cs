@@ -13,24 +13,22 @@ builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionStri
 
 // Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
-// Configure Swagger (Swashbuckle)
+// Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Use built-in OpenAPI support
+builder.Services.AddOpenApi();
 RegisterApplicationSrvices(builder);
 
 //Register MediatR Services
 var assemblies = new Assembly[]
 {
     Assembly.GetExecutingAssembly(),
-        typeof(ProcessPaymentHandler).Assembly,
-        typeof(RefundPaymentHandler).Assembly
-
-
-    }
-;
+    typeof(ProcessPaymentHandler).Assembly,
+    typeof(RefundPaymentHandler).Assembly
+};
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
 
 var app = builder.Build();
