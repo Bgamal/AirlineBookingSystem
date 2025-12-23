@@ -13,7 +13,7 @@ namespace AirlineBookingSystem.Bookings.Application.Handlers
         private readonly IBookingRepository _bookingRepository;
         public CreateBookingHandler(IBookingRepository bookingRepository)
         {
-                bookingRepository = bookingRepository;
+            _bookingRepository = bookingRepository;
         }
 
         public async Task<Guid> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
