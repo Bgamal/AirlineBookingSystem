@@ -6,8 +6,8 @@ using AirlineBookingSystem.Bookings.Infrastructure.Repositories;
 using MassTransit;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
-
-
+using AitlineBookingSystem.BuildingBlocks.Common;
+using AirlineBookingSystem.Bookings.Application.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,9 +40,17 @@ builder.Services.AddMediatR(cfg =>cfg.RegisterServicesFromAssemblies(assemblies)
 
 builder.Services.AddMassTransit(cfg =>
 {
+    //consumer registration
+    cfg.AddConsumer<NotificationEventConsumer>();
+
+
     cfg.UsingRabbitMq((context, rabbitCfg) =>
     {
-        rabbitCfg.Host(builder.Configuration.GetConnectionString("RabbitMQ"));
+        rabbitCfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+        rabbitCfg.ReceiveEndpoint(EventBusConstant.NotificationSentQueue, e =>
+        {
+            e.ConfigureConsumer<NotificationEventConsumer>(context);
+        });
         rabbitCfg.ConfigureEndpoints(context);
     });
 });
