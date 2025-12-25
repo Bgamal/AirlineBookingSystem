@@ -3,6 +3,7 @@ using System.Reflection;
 using AirlineBookingSystem.Bookings.Application.Handlers;
 using AirlineBookingSystem.Bookings.Core.Repositories;
 using AirlineBookingSystem.Bookings.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 
@@ -36,6 +37,15 @@ var assemblies =new Assembly[]
         typeof(GetBookingHandler).Assembly
     };
 builder.Services.AddMediatR(cfg =>cfg.RegisterServicesFromAssemblies(assemblies));
+
+builder.Services.AddMassTransit(cfg =>
+{
+    cfg.UsingRabbitMq((context, rabbitCfg) =>
+    {
+        rabbitCfg.Host(builder.Configuration.GetConnectionString("RabbitMQ"));
+        rabbitCfg.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 
