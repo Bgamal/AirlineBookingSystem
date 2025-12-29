@@ -3,6 +3,7 @@ using AirlineBookingSystem.Bookings.Application.Handlers;
 using AirlineBookingSystem.Bookings.Core.Entities;
 using AirlineBookingSystem.Bookings.Core.Repositories;
 using FluentAssertions;
+using MassTransit;
 using Moq;
 using Xunit;
 
@@ -11,11 +12,16 @@ namespace AirlineBookingSystem.Bookings.Application.Tests.Handlers;
 public class CreateBookingHandlerTests
 {
     private readonly Mock<IBookingRepository> _repositoryMock = new();
+    private readonly Mock<IPublishEndpoint> _publishEndpointMock = new();
     private readonly CreateBookingHandler _handler;
 
     public CreateBookingHandlerTests()
     {
-        _handler = new CreateBookingHandler(_repositoryMock.Object);
+        _publishEndpointMock
+            .Setup(p => p.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _handler = new CreateBookingHandler(_repositoryMock.Object, _publishEndpointMock.Object);
     }
 
     [Fact]

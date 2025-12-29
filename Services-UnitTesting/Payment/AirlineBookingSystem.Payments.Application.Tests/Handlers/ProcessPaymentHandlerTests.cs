@@ -3,6 +3,7 @@ using AirlineBookingSystem.Payments.Application.Handlers;
 using AirlineBookingSystem.Payments.Core.Entities;
 using AirlineBookingSystem.Payments.Core.Repositories;
 using FluentAssertions;
+using MassTransit;
 using Moq;
 using Xunit;
 
@@ -11,11 +12,16 @@ namespace AirlineBookingSystem.Payments.Application.Tests.Handlers;
 public class ProcessPaymentHandlerTests
 {
     private readonly Mock<IPaymentRepositry> _repositoryMock = new();
+    private readonly Mock<IPublishEndpoint> _publishEndpointMock = new();
     private readonly ProcessPaymentHandler _handler;
 
     public ProcessPaymentHandlerTests()
     {
-        _handler = new ProcessPaymentHandler(_repositoryMock.Object);
+        _publishEndpointMock
+            .Setup(p => p.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _handler = new ProcessPaymentHandler(_repositoryMock.Object, _publishEndpointMock.Object);
     }
 
     [Fact]

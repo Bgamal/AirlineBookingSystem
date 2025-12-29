@@ -1,15 +1,20 @@
 using AirlineBookingSystem.Payments.Application.Handlers;
 using AirlineBookingSystem.Payments.Core.Repositories;
 using AirlineBookingSystem.Payments.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Reflection;
+using AitlineBookingSystem.BuildingBlocks.Common;
+using AirlineBookingSystem.Payments.Application.Consumers;
+using AitlineBookingSystem.BuildingBlocks.Contracts.EventBus.Messages;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure IDbConnection using connection string from configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+RegisterApplicationSrvices(builder);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -20,7 +25,6 @@ builder.Services.AddSwaggerGen();
 
 // Use built-in OpenAPI support
 builder.Services.AddOpenApi();
-RegisterApplicationSrvices(builder);
 
 //Register MediatR Services
 var assemblies = new Assembly[]
@@ -30,6 +34,24 @@ var assemblies = new Assembly[]
     typeof(RefundPaymentHandler).Assembly
 };
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+
+builder.Services.AddMassTransit(cfg =>
+{
+    //consumer registration
+    cfg.AddConsumer<FlightBookedConsumer>();
+
+
+    cfg.UsingRabbitMq((context, rabbitCfg) =>
+    {
+        rabbitCfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+        rabbitCfg.ReceiveEndpoint(EventBusConstant.FlightBookedQueue, e =>
+        {
+            e.ConfigureConsumer<FlightBookedConsumer>(context);
+        });
+        rabbitCfg.ConfigureEndpoints(context);
+    });
+});
+
 
 var app = builder.Build();
 

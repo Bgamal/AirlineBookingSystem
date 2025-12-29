@@ -1,8 +1,11 @@
+using AirlineBookingSystem.Notifications.Application.Consumers;
 using AirlineBookingSystem.Notifications.Application.Handlers;
 using AirlineBookingSystem.Notifications.Application.Interfaces;
 using AirlineBookingSystem.Notifications.Application.Services;
 using AirlineBookingSystem.Notifications.Core.Repositories;
 using AirlineBookingSystem.Notifications.Infrastructure.Repositories;
+using AitlineBookingSystem.BuildingBlocks.Common;
+using MassTransit;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Reflection;
@@ -35,6 +38,25 @@ var assemblies = new Assembly[]
     typeof(SendNotificationHandler).Assembly
 };
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
+
+
+builder.Services.AddMassTransit(cfg =>
+{
+    //consumer registration
+    cfg.AddConsumer<PaymentProcessedConsumer>();
+
+
+    cfg.UsingRabbitMq((context, rabbitCfg) =>
+    {
+        rabbitCfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+        rabbitCfg.ReceiveEndpoint(EventBusConstant.PaymentProcessedQueue, e =>
+        {
+            e.ConfigureConsumer<PaymentProcessedConsumer>(context);
+        });
+        rabbitCfg.ConfigureEndpoints(context);
+    });
+});
+
 
 var app = builder.Build();
 
