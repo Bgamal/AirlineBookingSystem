@@ -15,4 +15,8 @@
     <ProjectReference Include="..\AirlineBookingSystem.Fights.Core\AirlineBookingSystem.Fights.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
+
 </Project>

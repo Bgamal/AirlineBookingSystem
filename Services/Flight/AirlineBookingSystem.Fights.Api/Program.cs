@@ -13,6 +13,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 #endregion
 
+#region MongoDB connection string  
+// You can configure MongoDB settings here if needed
+
+#endregion
+
 // Add services to the container.
 builder.Services.AddControllers();
 // Add Swagger/OpenAPI
