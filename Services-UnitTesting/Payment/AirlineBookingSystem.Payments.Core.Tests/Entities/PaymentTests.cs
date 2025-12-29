@@ -20,7 +20,6 @@ public class PaymentTests
             Id = id,
             BookingId = bookingId,
             Amount = 250m,
-            Balance = 0m,
             PaymentDate = paymentDate
         };
 
@@ -28,7 +27,6 @@ public class PaymentTests
         payment.Id.Should().Be(id);
         payment.BookingId.Should().Be(bookingId);
         payment.Amount.Should().Be(250m);
-        payment.Balance.Should().Be(0m);
         payment.PaymentDate.Should().Be(paymentDate);
     }
 }

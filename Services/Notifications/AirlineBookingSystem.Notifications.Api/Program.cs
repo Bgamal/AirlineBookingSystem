@@ -45,7 +45,6 @@ builder.Services.AddMassTransit(cfg =>
     //consumer registration
     cfg.AddConsumer<PaymentProcessedConsumer>();
 
-
     cfg.UsingRabbitMq((context, rabbitCfg) =>
     {
         rabbitCfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
@@ -74,7 +73,15 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Application startup error: {ex.Message}");
+    throw;
+}
 
 void RegisterApplicationSrvices(WebApplicationBuilder builder)
 {

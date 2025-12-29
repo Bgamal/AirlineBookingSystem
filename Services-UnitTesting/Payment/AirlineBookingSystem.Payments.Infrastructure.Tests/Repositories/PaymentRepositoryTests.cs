@@ -25,7 +25,6 @@ public class PaymentRepositoryTests
             Id = Guid.NewGuid(),
             BookingId = Guid.NewGuid(),
             Amount = 250m,
-            Balance = 0m,
             PaymentDate = DateTime.UtcNow
         };
 
@@ -55,12 +54,11 @@ public class PaymentRepositoryTests
             Id = Guid.NewGuid(),
             BookingId = Guid.NewGuid(),
             Amount = 300m,
-            Balance = 100m,
             PaymentDate = DateTime.UtcNow
         };
 
         await connection.ExecuteAsync(
-            "INSERT INTO Payments (Id, BookingId, Amount, Balance, PaymentDate) VALUES (@Id, @BookingId, @Amount, @Balance, @PaymentDate)",
+            "INSERT INTO Payments (Id, BookingId, Amount, PaymentDate) VALUES (@Id, @BookingId, @Amount, @PaymentDate)",
             payment);
 
         // Act
@@ -74,7 +72,7 @@ public class PaymentRepositoryTests
     }
 
     [Fact]
-    public async Task RefundPaymentAsync_ShouldZeroBalanceAndReturnPayment()
+    public async Task RefundPaymentAsync_ShouldReturnPayment()
     {
         // Arrange
         await using var connection = CreateOpenConnection();
@@ -85,12 +83,11 @@ public class PaymentRepositoryTests
             Id = Guid.NewGuid(),
             BookingId = Guid.NewGuid(),
             Amount = 400m,
-            Balance = 200m,
             PaymentDate = DateTime.UtcNow
         };
 
         await connection.ExecuteAsync(
-            "INSERT INTO Payments (Id, BookingId, Amount, Balance, PaymentDate) VALUES (@Id, @BookingId, @Amount, @Balance, @PaymentDate)",
+            "INSERT INTO Payments (Id, BookingId, Amount, PaymentDate) VALUES (@Id, @BookingId, @Amount, @PaymentDate)",
             payment);
 
         // Act
@@ -98,14 +95,12 @@ public class PaymentRepositoryTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Balance.Should().Be(0m);
 
         var stored = await connection.QuerySingleOrDefaultAsync<Payment>(
             "SELECT * FROM Payments WHERE Id = @Id",
             new { payment.Id });
 
         stored.Should().NotBeNull();
-        stored!.Balance.Should().Be(0m);
     }
 
     [Fact]
@@ -120,12 +115,11 @@ public class PaymentRepositoryTests
             Id = Guid.NewGuid(),
             BookingId = Guid.NewGuid(),
             Amount = 150m,
-            Balance = 50m,
             PaymentDate = DateTime.UtcNow
         };
 
         await connection.ExecuteAsync(
-            "INSERT INTO Payments (Id, BookingId, Amount, Balance, PaymentDate) VALUES (@Id, @BookingId, @Amount, @Balance, @PaymentDate)",
+            "INSERT INTO Payments (Id, BookingId, Amount, PaymentDate) VALUES (@Id, @BookingId, @Amount, @PaymentDate)",
             payment);
 
         // Act
@@ -148,7 +142,6 @@ public class PaymentRepositoryTests
             Id TEXT PRIMARY KEY,
             BookingId TEXT NOT NULL,
             Amount REAL NOT NULL,
-            Balance REAL NOT NULL,
             PaymentDate TEXT NOT NULL
         )");
 

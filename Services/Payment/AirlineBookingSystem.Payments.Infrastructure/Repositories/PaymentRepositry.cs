@@ -36,24 +36,19 @@ namespace AirlineBookingSystem.Payments.Infrastructure.Repositories
 
         public async Task ProcessPaymentAsync(Payment payment)
         {
-            const string sql = @"INSERT INTO Payments (Id, BookingId, Amount, Balance, PaymentDate)
-                                 VALUES (@Id, @BookingId, @Amount, @Balance, @PaymentDate)";
+            const string sql = @"INSERT INTO Payments (Id, BookingId, Amount, PaymentDate)
+                                 VALUES (@Id, @BookingId, @Amount, @PaymentDate)";
             await _dbConnection.ExecuteAsync(sql, payment);
         }
 
         public async Task<Payment> RefundPaymentAsync(Guid paymentId)
         {
-            // Example refund logic: find payment, set Balance to 0 and return updated payment
             var payment = await GetPaymentByIdAsync(paymentId);
             if (payment == null)
             {
                 return null;
             }
 
-            const string sql = "UPDATE Payments SET Balance = 0 WHERE Id = @Id";
-            await _dbConnection.ExecuteAsync(sql, new { Id = paymentId });
-
-            payment.Balance = 0;
             return payment;
         }
     }

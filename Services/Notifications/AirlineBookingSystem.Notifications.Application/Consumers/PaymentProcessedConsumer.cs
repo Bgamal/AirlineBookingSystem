@@ -13,7 +13,7 @@ namespace AirlineBookingSystem.Notifications.Application.Consumers
         private readonly IMediator _mediator;
         public PaymentProcessedConsumer(IMediator mediator)
         {
-                _mediator = mediator;
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
         public async Task Consume(ConsumeContext<PaymentProcessedEvent> context)
         {

@@ -16,8 +16,8 @@ namespace AirlineBookingSystem.Payments.Application.Handlers
         private readonly IPublishEndpoint _publishEndpoint;
         public ProcessPaymentHandler(IPaymentRepositry paymentRepositry,IPublishEndpoint publishEndpoint)
         {
-                _paymentRepository = paymentRepositry;
-                _publishEndpoint = publishEndpoint;
+            _paymentRepository = paymentRepositry ?? throw new ArgumentNullException(nameof(paymentRepositry));
+            _publishEndpoint = publishEndpoint ?? throw new ArgumentNullException(nameof(publishEndpoint));
         }
 
         public async Task<Guid> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
