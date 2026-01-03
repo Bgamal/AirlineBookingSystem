@@ -1,25 +1,37 @@
 using AirlineBookingSystem.Fights.Core.Entities;
+using AirlineBookingSystem.Fights.Infrastructure.Data;
 using AirlineBookingSystem.Fights.Infrastructure.Repositories;
-using Dapper;
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
+using MongoDB.Driver;
+using Moq;
 using Xunit;
 
 namespace AirlineBookingSystem.Flights.Infrastructure.Tests.Repositories;
 
 public class FlightRepositoryTests
 {
-    static FlightRepositoryTests()
+    private Mock<IFlightContext> CreateMockFlightContext()
     {
-        SqlMapper.AddTypeHandler(new SqliteGuidTypeHandler());
+        return new Mock<IFlightContext>();
+    }
+
+    private IMongoCollection<Flight> CreateMongoCollection()
+    {
+        var client = new MongoClient("mongodb://localhost:27017");
+        var database = client.GetDatabase("TestFlightDb");
+        database.DropCollection("Flights");
+        return database.GetCollection<Flight>("Flights");
     }
 
     [Fact]
     public async Task AddFlightAsync_ShouldPersistFlight()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
-        var repository = new FlightRepository(connection);
+        var collection = CreateMongoCollection();
+        var mockContext = new Mock<IFlightContext>();
+        mockContext.Setup(x => x.Flights).Returns(collection);
+
+        var repository = new FlightRepository(mockContext.Object);
         var flight = new Flight
         {
             Id = Guid.NewGuid(),
@@ -34,10 +46,7 @@ public class FlightRepositoryTests
         await repository.AddFlightAsync(flight);
 
         // Assert
-        var stored = await connection.QuerySingleOrDefaultAsync<Flight>(
-            "SELECT * FROM Flights WHERE Id = @Id",
-            new { flight.Id });
-
+        var stored = await collection.Find(f => f.Id == flight.Id).FirstOrDefaultAsync();
         stored.Should().NotBeNull();
         stored!.Should().BeEquivalentTo(flight, opts => opts
             .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromSeconds(1)))
@@ -48,8 +57,9 @@ public class FlightRepositoryTests
     public async Task GetFlightByIdAsync_WhenExists_ShouldReturnFlight()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
-        var repository = new FlightRepository(connection);
+        var collection = CreateMongoCollection();
+        var mockContext = new Mock<IFlightContext>();
+        mockContext.Setup(x => x.Flights).Returns(collection);
 
         var flight = new Flight
         {
@@ -61,9 +71,9 @@ public class FlightRepositoryTests
             ArrivalTime = DateTime.UtcNow.AddHours(3)
         };
 
-        await connection.ExecuteAsync(
-            "INSERT INTO Flights (Id, FlightNumber, Origin, Destination, DepartureTime, ArrivalTime) VALUES (@Id, @FlightNumber, @Origin, @Destination, @DepartureTime, @ArrivalTime)",
-            flight);
+        await collection.InsertOneAsync(flight);
+
+        var repository = new FlightRepository(mockContext.Object);
 
         // Act
         var result = await repository.GetFlightByIdAsync(flight.Id);
@@ -79,8 +89,11 @@ public class FlightRepositoryTests
     public async Task GetFlightByIdAsync_WhenMissing_ShouldReturnNull()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
-        var repository = new FlightRepository(connection);
+        var collection = CreateMongoCollection();
+        var mockContext = new Mock<IFlightContext>();
+        mockContext.Setup(x => x.Flights).Returns(collection);
+
+        var repository = new FlightRepository(mockContext.Object);
 
         // Act
         var result = await repository.GetFlightByIdAsync(Guid.NewGuid());
@@ -93,8 +106,9 @@ public class FlightRepositoryTests
     public async Task DeleteFlightAsync_ShouldRemoveFlight()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
-        var repository = new FlightRepository(connection);
+        var collection = CreateMongoCollection();
+        var mockContext = new Mock<IFlightContext>();
+        mockContext.Setup(x => x.Flights).Returns(collection);
 
         var flight = new Flight
         {
@@ -106,35 +120,15 @@ public class FlightRepositoryTests
             ArrivalTime = DateTime.UtcNow.AddHours(4)
         };
 
-        await connection.ExecuteAsync(
-            "INSERT INTO Flights (Id, FlightNumber, Origin, Destination, DepartureTime, ArrivalTime) VALUES (@Id, @FlightNumber, @Origin, @Destination, @DepartureTime, @ArrivalTime)",
-            flight);
+        await collection.InsertOneAsync(flight);
+
+        var repository = new FlightRepository(mockContext.Object);
 
         // Act
         await repository.DeleteFlightAsync(flight.Id);
 
         // Assert
-        var result = await connection.QuerySingleOrDefaultAsync<Flight>(
-            "SELECT * FROM Flights WHERE Id = @Id",
-            new { flight.Id });
-
+        var result = await collection.Find(f => f.Id == flight.Id).FirstOrDefaultAsync();
         result.Should().BeNull();
-    }
-
-    private static SqliteConnection CreateOpenConnection()
-    {
-        var connection = new SqliteConnection("Data Source=:memory:;Mode=Memory;Cache=Shared");
-        connection.Open();
-
-        connection.Execute(@"CREATE TABLE IF NOT EXISTS Flights (
-            Id TEXT PRIMARY KEY,
-            FlightNumber TEXT NOT NULL,
-            Origin TEXT NOT NULL,
-            Destination TEXT NOT NULL,
-            DepartureTime TEXT NOT NULL,
-            ArrivalTime TEXT NOT NULL
-        )");
-
-        return connection;
     }
 }

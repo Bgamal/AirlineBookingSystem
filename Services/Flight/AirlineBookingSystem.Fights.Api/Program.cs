@@ -1,5 +1,6 @@
 using AirlineBookingSystem.Fights.Application.Handlers;
 using AirlineBookingSystem.Fights.Core.Repositories;
+using AirlineBookingSystem.Fights.Infrastructure.Data;
 using AirlineBookingSystem.Fights.Infrastructure.Repositories;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -59,5 +60,6 @@ void RegisterApplicationSrvices(WebApplicationBuilder builder)
 {
     // Register application services here
     // services.AddScoped<IYourService, YourServiceImplementation>();
+    builder.Services.AddScoped<IFlightContext, FlightContext>();
     builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 }

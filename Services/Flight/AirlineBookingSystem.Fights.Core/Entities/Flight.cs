@@ -11,16 +11,16 @@ namespace AirlineBookingSystem.Fights.Core.Entities
         [BsonId]
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; set; }
-        [BsonElement("flightNumber")]
+        [BsonElement("FlightNumber")]
         public string FlightNumber { get; set; }
-        [BsonElement("origin")]
+        [BsonElement("Origin")]
         public string Origin { get; set; }
-        [BsonElement("destination")]
+        [BsonElement("Destination")]
         public string Destination { get; set; }
-        [BsonElement("departureTime")]
+        [BsonElement("DepartureTime")]
         [BsonRepresentation(BsonType.DateTime)]
         public DateTime DepartureTime { get; set; }
-        [BsonElement("arrivalTime")]
+        [BsonElement("ArrivalTime")]
         [BsonRepresentation(BsonType.DateTime)]
         public DateTime ArrivalTime { get; set; }
 
