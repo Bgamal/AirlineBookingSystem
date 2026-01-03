@@ -1,24 +1,24 @@
 using AirlineBookingSystem.Bookings.Core.Entities;
 using AirlineBookingSystem.Bookings.Infrastructure.Repositories;
-using Dapper;
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
+using Newtonsoft.Json;
+using StackExchange.Redis;
 using Xunit;
 
 namespace AirlineBookingSystem.Bookings.Infrastructure.Tests.Repositories;
 
 public class BookingRepositoryTests
 {
-    static BookingRepositoryTests()
-    {
-        SqlMapper.AddTypeHandler(new SqliteGuidTypeHandler());
-    }
+    private const string RedisKeyPrefix = "booking_";
 
     [Fact]
     public async Task AddBookingAsync_ShouldPersistBooking()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
+        using var connection = ConnectionMultiplexer.Connect("127.0.0.1:6379");
+        var database = connection.GetDatabase();
+        await database.ExecuteAsync("FLUSHDB");
+
         var repository = new BookingRepository(connection);
         var booking = new Booking
         {
@@ -33,12 +33,12 @@ public class BookingRepositoryTests
         await repository.AddBookingAsync(booking);
 
         // Assert
-        var stored = await connection.QuerySingleOrDefaultAsync<Booking>(
-            "SELECT * FROM Bookings WHERE Id = @Id",
-            new { booking.Id });
+        var stored = await database.StringGetAsync($"{RedisKeyPrefix}{booking.Id}");
+        stored.HasValue.Should().BeTrue();
 
-        stored.Should().NotBeNull();
-        stored!.Should().BeEquivalentTo(booking, opts => opts
+        var deserialized = JsonConvert.DeserializeObject<Booking>(stored.ToString());
+        deserialized.Should().NotBeNull();
+        deserialized!.Should().BeEquivalentTo(booking, opts => opts
             .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromSeconds(1)))
             .WhenTypeIs<DateTime>());
     }
@@ -47,7 +47,10 @@ public class BookingRepositoryTests
     public async Task GetBookingByIdAsync_WhenExists_ShouldReturnBooking()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
+        using var connection = ConnectionMultiplexer.Connect("127.0.0.1:6379");
+        var database = connection.GetDatabase();
+        await database.ExecuteAsync("FLUSHDB");
+
         var repository = new BookingRepository(connection);
 
         var booking = new Booking
@@ -59,9 +62,8 @@ public class BookingRepositoryTests
             BookingDate = DateTime.UtcNow
         };
 
-        await connection.ExecuteAsync(
-            "INSERT INTO Bookings (Id, FlightId, PassengerName, BookingDate, SeatNumber) VALUES (@Id, @FlightId, @PassengerName, @BookingDate, @SeatNumber)",
-            booking);
+        var data = JsonConvert.SerializeObject(booking);
+        await database.StringSetAsync($"{RedisKeyPrefix}{booking.Id}", data);
 
         // Act
         var result = await repository.GetBookingByIdAsync(booking.Id);
@@ -77,7 +79,10 @@ public class BookingRepositoryTests
     public async Task GetBookingByIdAsync_WhenMissing_ShouldReturnNull()
     {
         // Arrange
-        await using var connection = CreateOpenConnection();
+        using var connection = ConnectionMultiplexer.Connect("127.0.0.1:6379");
+        var database = connection.GetDatabase();
+        await database.ExecuteAsync("FLUSHDB");
+
         var repository = new BookingRepository(connection);
 
         // Act
@@ -85,21 +90,5 @@ public class BookingRepositoryTests
 
         // Assert
         result.Should().BeNull();
-    }
-
-    private static SqliteConnection CreateOpenConnection()
-    {
-        var connection = new SqliteConnection("Data Source=:memory:;Mode=Memory;Cache=Shared");
-        connection.Open();
-
-        connection.Execute(@"CREATE TABLE IF NOT EXISTS Bookings (
-            Id TEXT PRIMARY KEY,
-            FlightId TEXT NOT NULL,
-            PassengerName TEXT NOT NULL,
-            BookingDate TEXT NOT NULL,
-            SeatNumber TEXT NOT NULL
-        )");
-
-        return connection;
     }
 }
