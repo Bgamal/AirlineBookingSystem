@@ -8,12 +8,22 @@ using System.Reflection;
 using AitlineBookingSystem.BuildingBlocks.Common;
 using AirlineBookingSystem.Payments.Application.Consumers;
 using AitlineBookingSystem.BuildingBlocks.Contracts.EventBus.Messages;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure IDbConnection using connection string from configuration
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+//// Configure IDbConnection using connection string from configuration
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+//builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+
+#region Postgres
+builder.Services.AddScoped<IDbConnection>(sp =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
+    return new NpgsqlConnection(connectionString);
+});
+#endregion
+
 RegisterApplicationSrvices(builder);
 
 // Add services to the container.
