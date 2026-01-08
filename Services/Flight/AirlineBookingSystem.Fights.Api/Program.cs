@@ -1,6 +1,6 @@
-
 using AirlineBookingSystem.Fights.Application.Handlers;
 using AirlineBookingSystem.Fights.Core.Repositories;
+using AirlineBookingSystem.Fights.Infrastructure.Data;
 using AirlineBookingSystem.Fights.Infrastructure.Repositories;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -14,16 +14,20 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 #endregion
 
+#region MongoDB connection string  
+// You can configure MongoDB settings here if needed
+
+#endregion
+
 // Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-// Configure Swagger (Swashbuckle)
+// Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-RegisterApplicationSrvices(builder);
+// Use built-in OpenAPI support
+builder.Services.AddOpenApi();
 
+RegisterApplicationSrvices(builder);
 
 //Register MediatR Services
 var assemblies = new Assembly[]
@@ -56,5 +60,6 @@ void RegisterApplicationSrvices(WebApplicationBuilder builder)
 {
     // Register application services here
     // services.AddScoped<IYourService, YourServiceImplementation>();
+    builder.Services.AddScoped<IFlightContext, FlightContext>();
     builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 }

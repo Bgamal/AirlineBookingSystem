@@ -3,20 +3,28 @@ using System.Reflection;
 using AirlineBookingSystem.Bookings.Application.Handlers;
 using AirlineBookingSystem.Bookings.Core.Repositories;
 using AirlineBookingSystem.Bookings.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
-
-
+using AitlineBookingSystem.BuildingBlocks.Common;
+using AirlineBookingSystem.Bookings.Application.Consumers;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#region sql server connection string
-// Configure IDbConnection using connection string from configuration
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+//#region sql server connection string
+//// Configure IDbConnection using connection string from configuration
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+//builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+//#endregion
+
+//redis cache configuration 
+#region Redis
+var redisConfiguration = builder.Configuration.GetValue<string>("CacheSettings:ConnectionString");
+var redis = ConnectionMultiplexer.Connect(redisConfiguration);
+builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+
 #endregion
-
-
 // Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -36,6 +44,23 @@ var assemblies =new Assembly[]
         typeof(GetBookingHandler).Assembly
     };
 builder.Services.AddMediatR(cfg =>cfg.RegisterServicesFromAssemblies(assemblies));
+
+builder.Services.AddMassTransit(cfg =>
+{
+    //consumer registration
+    cfg.AddConsumer<NotificationEventConsumer>();
+
+
+    cfg.UsingRabbitMq((context, rabbitCfg) =>
+    {
+        rabbitCfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+        rabbitCfg.ReceiveEndpoint(EventBusConstant.NotificationSentQueue, e =>
+        {
+            e.ConfigureConsumer<NotificationEventConsumer>(context);
+        });
+        rabbitCfg.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 

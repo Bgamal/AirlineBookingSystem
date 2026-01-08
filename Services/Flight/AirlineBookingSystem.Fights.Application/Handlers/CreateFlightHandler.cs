@@ -18,9 +18,10 @@ namespace AirlineBookingSystem.Fights.Application.Handlers
 
         public async Task<Guid> Handle(CreateFlightCommand request, CancellationToken cancellationToken)
         {
+           
             var flight =new Flight
             {
-                Id=new Guid(),
+                Id=Guid.NewGuid(),
                 FlightNumber = request.FlightNumber,
                 Origin = request.Origin,
                 Destination = request.Destination,

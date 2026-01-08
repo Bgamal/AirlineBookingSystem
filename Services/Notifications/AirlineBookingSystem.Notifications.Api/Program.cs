@@ -1,9 +1,11 @@
+using AirlineBookingSystem.Notifications.Application.Consumers;
 using AirlineBookingSystem.Notifications.Application.Handlers;
 using AirlineBookingSystem.Notifications.Application.Interfaces;
 using AirlineBookingSystem.Notifications.Application.Services;
-using AirlineBookingSystem.Notifications.Core.Entities;
 using AirlineBookingSystem.Notifications.Core.Repositories;
 using AirlineBookingSystem.Notifications.Infrastructure.Repositories;
+using AitlineBookingSystem.BuildingBlocks.Common;
+using MassTransit;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Reflection;
@@ -15,26 +17,45 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-// Configure Swagger (Swashbuckle)
+builder.Services.AddControllers();
+// Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Use built-in OpenAPI support
+builder.Services.AddOpenApi();
+
+// Add authorization services (required when using app.UseAuthorization())
+builder.Services.AddAuthorization();
+
+// Application Services
+builder.Services.AddScoped<INotificationService, NotificationService>();
 RegisterApplicationSrvices(builder);
 
-//Register MediatR Services
+// Register MediatR Services
 var assemblies = new Assembly[]
 {
     Assembly.GetExecutingAssembly(),
-        typeof(SendNotificationHandler).Assembly
-
-    }
-;
+    typeof(SendNotificationHandler).Assembly
+};
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
-//Application Services
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+
+builder.Services.AddMassTransit(cfg =>
+{
+    //consumer registration
+    cfg.AddConsumer<PaymentProcessedConsumer>();
+
+    cfg.UsingRabbitMq((context, rabbitCfg) =>
+    {
+        rabbitCfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+        rabbitCfg.ReceiveEndpoint(EventBusConstant.PaymentProcessedQueue, e =>
+        {
+            e.ConfigureConsumer<PaymentProcessedConsumer>(context);
+        });
+        rabbitCfg.ConfigureEndpoints(context);
+    });
+});
+
 
 var app = builder.Build();
 
@@ -52,10 +73,18 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Application startup error: {ex.Message}");
+    throw;
+}
+
 void RegisterApplicationSrvices(WebApplicationBuilder builder)
 {
     // Register application services here
-    // services.AddScoped<IYourService, YourServiceImplementation>();
     builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 }

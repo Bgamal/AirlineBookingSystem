@@ -6,6 +6,6 @@ using System.Text;
 
 namespace AirlineBookingSystem.Bookings.Application.Queries
 {
-    public record GetBookingQuery(Guid Id) : IRequest<Booking>;
+    public record GetBookingQuery(Guid Id) : IRequest<Booking?>;
 
 }

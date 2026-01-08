@@ -18,8 +18,8 @@ namespace AirlineBookingSystem.Notifications.Infrastructure.Repositories
 
         public async Task AddNotificationAsync(Notification notification)
         {
-            const string sql = @"INSERT INTO Notifications (Id, recipient, Message, Type)
-                                 VALUES (@Id, @recipient, @Message, @Type)";
+            const string sql = @"INSERT INTO Notifications (Id, Recipient, Message, Type)
+                                 VALUES (@Id, @Recipient, @Message, @Type)";
             await _dbConnection.ExecuteAsync(sql, notification);
         }
 

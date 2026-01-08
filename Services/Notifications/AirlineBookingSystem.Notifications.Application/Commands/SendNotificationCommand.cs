@@ -6,9 +6,10 @@ using System.Text;
 namespace AirlineBookingSystem.Notifications.Application.Commands
 {
     public record SendNotificationCommand(
-       string Recipient,
+        string Recipient,
         string Message,
-       string Type
-    ):IRequest;
-   
+        string Type
+    ) : IRequest
+    {
+    }
 }
