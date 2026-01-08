@@ -117,18 +117,18 @@ Unit tests are organized by service and layer in `Services-UnitTesting/`:
 
 Manages airline flight information including creation, retrieval, and deletion of flights.
 
-**Database**: SQL Server (with MongoDB support planned)
+**Database**: MongoDB (primary store) with optional SQL Server support
 
 **Key Components**:
 - `FlightsController`: REST endpoints for flight operations
 - `IFlightRepository`: Data access layer
 - `CreateFlightHandler`, `DeleteFlightHandler`, `GetAllFlightsHandler`: MediatR handlers
-- `FlightContext`: Entity Framework context
+- `FlightContext`: MongoDB context wrapper providing the `Flights` collection
 
 **Dependencies**:
 - MediatR for CQRS pattern
-- Dapper for data access
-- SQL Server database
+- MongoDB .NET Driver for document persistence
+- (Optional) Dapper and SQL Server for relational reads or legacy data
 
 **API Endpoints**:
 - `GET /api/flights` - Get all flights
@@ -301,6 +301,7 @@ Contains shared contracts, constants, and utilities used across all microservice
 - **SQL Server** - Port: 1433
 - **PostgreSQL** - Port: 5432
 - **Redis** - Port: 6379
+- **MongoDB** - Port: 27017
 
 ---
 
@@ -340,16 +341,18 @@ dotnet build
 
 Each microservice has an `appsettings.json` file with service-specific configuration.
 
-#### Payment Service Configuration
-**File**: `Services/Payment/AirlineBookingSystem.Payments.Api/appsettings.json`
+#### Flight Service Configuration
+**File**: `Services/Flight/AirlineBookingSystem.Flights.Api/appsettings.json`
 
 ```json
 {
-  "EventBusSettings": {
-    "HostAddress": "amqp://guest:guest@localhost:5672/"
-  },
   "ConnectionStrings": {
-    "PostgresConnection": "Host=localhost;Port=5432;Database=PaymentDb;Username=postgres;Password=postgres123"
+    "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightDb;Integrated Security=True"
+  },
+  "DatabaseSettings": {
+    "ConnectionString": "mongodb://localhost:27017?readPrefrence=primary&ssl=false",
+    "DatabaseName": "FlightsDb",
+    "CollectionName": "Flights"
   },
   "Logging": {
     "LogLevel": {
@@ -383,13 +386,16 @@ Each microservice has an `appsettings.json` file with service-specific configura
 }
 ```
 
-#### Flight Service Configuration
-**File**: `Services/Flight/AirlineBookingSystem.Fights.Api/appsettings.json`
+#### Payment Service Configuration
+**File**: `Services/Payment/AirlineBookingSystem.Payments.Api/appsettings.json`
 
 ```json
 {
+  "EventBusSettings": {
+    "HostAddress": "amqp://guest:guest@localhost:5672/"
+  },
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightDb;Integrated Security=True"
+    "PostgresConnection": "Host=localhost;Port=5432;Database=PaymentDb;Username=postgres;Password=postgres123"
   },
   "Logging": {
     "LogLevel": {
@@ -428,6 +434,7 @@ Each microservice has an `appsettings.json` file with service-specific configura
 | `ConnectionStrings:DefaultConnection` | SQL Server connection | `Data Source=(localdb)\\MSSQLLocalDB;...` |
 | `ConnectionStrings:PostgresConnection` | PostgreSQL connection | `Host=localhost;Port=5432;...` |
 | `CacheSettings:ConnectionString` | Redis connection | `localhost:6379` |
+| `DatabaseSettings:ConnectionString` | MongoDB connection | `mongodb://localhost:27017` |
 
 ---
 
@@ -515,10 +522,22 @@ services:
     networks:
       - airline-network
 
+  # NoSQL - MongoDB (Flight Service)
+  mongodb:
+    image: mongo:7
+    container_name: airline-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - airline-network
+
 volumes:
   sqlserver-data:
   postgres-data:
   redis-data:
+  mongodb-data:
 
 networks:
   airline-network:
@@ -539,6 +558,7 @@ Creating airline-rabbitmq ... done
 Creating airline-sqlserver ... done
 Creating airline-postgres ... done
 Creating airline-redis ... done
+Creating airline-mongodb ... done
 ```
 
 #### Check Service Status
@@ -554,6 +574,7 @@ airline-rabbitmq    docker-entrypoint.sh...  rabbitmq     Up 2 minutes        0.
 airline-sqlserver   /opt/mssql/bin/sqlse...  sqlserver    Up 2 minutes        0.0.0.0:1433->1433/tcp
 airline-postgres    docker-entrypoint.s...   postgres     Up 2 minutes        0.0.0.0:5432->5432/tcp
 airline-redis       redis-server             redis        Up 2 minutes        0.0.0.0:6379->6379/tcp
+airline-mongodb     docker-entrypoint.s...   mongodb      Up 2 minutes        0.0.0.0:27017->27017/tcp
 ```
 
 #### View Service Logs
@@ -567,6 +588,7 @@ docker-compose logs -f rabbitmq
 docker-compose logs -f sqlserver
 docker-compose logs -f postgres
 docker-compose logs -f redis
+docker-compose logs -f mongodb
 ```
 
 #### Access RabbitMQ Management Console
@@ -599,6 +621,13 @@ Password: postgres123
 ```
 Host: localhost
 Port: 6379
+```
+
+**MongoDB**:
+```
+Host: localhost
+Port: 27017
+Connection String: mongodb://localhost:27017
 ```
 
 #### Stop All Services
@@ -645,7 +674,7 @@ Open separate terminal windows for each service:
 
 #### Flight Service (Dev HTTPS: 63071, HTTP: 63072)
 ```bash
-cd Services/Flight/AirlineBookingSystem.Fights.Api
+cd Services/Flight/AirlineBookingSystem.Flights.Api
 dotnet run
 ```
 
@@ -863,20 +892,19 @@ curl -X POST http://localhost:5173/api/notifications \
 
 ## Database Schemas
 
-### Flight Service Database (FlightDb - SQL Server)
+### Flight Service Database (FlightsDb - MongoDB)
 
-```sql
-CREATE TABLE Flights (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    FlightNumber NVARCHAR(50) NOT NULL,
-    DepartureCity NVARCHAR(100) NOT NULL,
-    ArrivalCity NVARCHAR(100) NOT NULL,
-    DepartureTime DATETIME NOT NULL,
-    ArrivalTime DATETIME NOT NULL,
-    Price DECIMAL(10, 2) NOT NULL,
-    AvailableSeats INT NOT NULL,
-    CreatedDate DATETIME DEFAULT GETDATE()
-);
+```json
+{
+  "_id": ObjectId,
+  "flightNumber": String,
+  "departureCity": String,
+  "arrivalCity": String,
+  "departureTime": Date,
+  "arrivalTime": Date,
+  "price": Decimal,
+  "availableSeats": Int32
+}
 ```
 
 ### Booking Service Database (BookingDb - SQL Server)
@@ -937,6 +965,8 @@ CREATE TABLE Notifications (
 - **Entity Framework Core** - (Available for use)
 - **SQL Server** - Primary relational database
 - **PostgreSQL** - Secondary relational database
+- **MongoDB** - Document database for the Flight service
+- **MongoDB .NET Driver** - Native driver for MongoDB access
 
 ### Message Bus & Events
 - **MassTransit** - Service bus abstraction
@@ -968,6 +998,7 @@ CREATE TABLE Notifications (
 - [ ] Install .NET 10 SDK
 - [ ] Install Docker and Docker Compose
 - [ ] Run `docker-compose up -d` to start infrastructure
+- [ ] Ensure MongoDB is running (Docker container or local instance)
 - [ ] Create SQL Server databases (FlightDb, BookingDb, NotificationDb)
 - [ ] Update `appsettings.json` if needed for your environment
 - [ ] Run `dotnet restore` in solution directory
