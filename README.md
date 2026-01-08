@@ -42,37 +42,72 @@ The Airline Booking System is a distributed microservices application that manag
 
 ```
 AirlineBookingSystem/
-??? Services/
-?   ??? Flight/                           # Flight Management Service
-?   ?   ??? AirlineBookingSystem.Fights.Api
-?   ?   ??? AirlineBookingSystem.Fights.Core
-?   ?   ??? AirlineBookingSystem.Fights.Application
-?   ?   ??? AirlineBookingSystem.Fights.Infrastructure
-?   ??? Booking/                          # Booking Management Service
-?   ?   ??? AirlineBookingSystem.Bookings.Api
-?   ?   ??? AirlineBookingSystem.Bookings.Core
-?   ?   ??? AirlineBookingSystem.Bookings.Application
-?   ?   ??? AirlineBookingSystem.Bookings.Infrastructure
-?   ??? Payment/                          # Payment Processing Service
-?   ?   ??? AirlineBookingSystem.Payments.Api
-?   ?   ??? AirlineBookingSystem.Payments.Core
-?   ?   ??? AirlineBookingSystem.Payments.Application
-?   ?   ??? AirlineBookingSystem.Payments.Infrastructure
-?   ??? Notifications/                    # Notification Service
-?       ??? AirlineBookingSystem.Notifications.Api
-?       ??? AirlineBookingSystem.Notifications.Core
-?       ??? AirlineBookingSystem.Notifications.Application
-?       ??? AirlineBookingSystem.Notifications.Infrastructure
-??? Services-UnitTesting/                 # Unit tests for all services
-?   ??? Flight/
-?   ??? Booking/
-?   ??? Payment/
-?   ??? Notification/
-??? BuildingBlocks/
-?   ??? AitlineBookingSystem.BuildingBlocks  # Shared libraries and contracts
-??? docker-compose.yml                    # Docker orchestration
-
+├── Services/
+│   ├── Flight/                           # Flight Management Service
+│   │   ├── AirlineBookingSystem.Flights.Api
+│   │   ├── AirlineBookingSystem.Flights.Core
+│   │   ├── AirlineBookingSystem.Flights.Application
+│   │   └── AirlineBookingSystem.Flights.Infrastructure
+│   ├── Booking/                          # Booking Management Service
+│   │   ├── AirlineBookingSystem.Bookings.Api
+│   │   ├── AirlineBookingSystem.Bookings.Core
+│   │   ├── AirlineBookingSystem.Bookings.Application
+│   │   └── AirlineBookingSystem.Bookings.Infrastructure
+│   ├── Payment/                          # Payment Processing Service
+│   │   ├── AirlineBookingSystem.Payments.Api
+│   │   ├── AirlineBookingSystem.Payments.Core
+│   │   ├── AirlineBookingSystem.Payments.Application
+│   │   └── AirlineBookingSystem.Payments.Infrastructure
+│   └── Notifications/                    # Notification Service
+│       ├── AirlineBookingSystem.Notifications.Api
+│       ├── AirlineBookingSystem.Notifications.Core
+│       ├── AirlineBookingSystem.Notifications.Application
+│       └── AirlineBookingSystem.Notifications.Infrastructure
+├── Services-UnitTesting/                 # Unit tests for all services
+│   ├── Flight/
+│   ├── Booking/
+│   ├── Payment/
+│   └── Notification/
+├── BuildingBlocks/
+│   └── AirlineBookingSystem.BuildingBlocks  # Shared libraries and contracts
+└── docker-compose.yml                    # Docker orchestration
 ```
+
+### Project Layer Breakdown
+
+#### Each Microservice Contains 4 Layers:
+
+1. **Api Layer** - REST endpoints and controllers
+   - Example: `AirlineBookingSystem.Payments.Api`
+   - Contains: Controllers, Program.cs, appsettings.json
+
+2. **Core Layer** - Business entities and interfaces
+   - Example: `AirlineBookingSystem.Payments.Core`
+   - Contains: Entities, Repositories, Business logic interfaces
+
+3. **Application Layer** - Business logic and handlers
+   - Example: `AirlineBookingSystem.Payments.Application`
+   - Contains: Handlers (MediatR), Services, DTOs, Commands, Queries
+
+4. **Infrastructure Layer** - Data access and external integrations
+   - Example: `AirlineBookingSystem.Payments.Infrastructure`
+   - Contains: Repository implementations, Database context, migrations
+
+### Testing Projects
+
+Unit tests are organized by service and layer in `Services-UnitTesting/`:
+- `AirlineBookingSystem.Payments.Api.Tests` - API endpoint tests
+- `AirlineBookingSystem.Payments.Core.Tests` - Core entity tests
+- `AirlineBookingSystem.Payments.Application.Tests` - Handler and business logic tests
+- `AirlineBookingSystem.Payments.Infrastructure.Tests` - Repository and data access tests
+
+### Shared Components
+
+**BuildingBlocks** - Common code used across all microservices:
+- Event contracts for inter-service communication
+- Shared constants and configurations
+- Common interfaces and base classes
+- Event bus configuration
 
 ---
 
@@ -221,36 +256,33 @@ Contains shared contracts, constants, and utilities used across all microservice
 ### Communication Flow
 
 ```
-???????????????????????????????????????????????????????
-?                   Client Request                     ?
-???????????????????????????????????????????????????????
-                           ?
-                    ???????????????
-                    ?   Gateway   ?
-                    ???????????????
-         ???????????????????????????????????????
-         ?                  ?                  ?
-    ???????????        ???????????       ???????????
-    ? Flights ?        ? Bookings ?       ? Payments?
-    ???????????        ???????????       ???????????
-         ?                  ?                  ?
-         ???????????????????????????????????????
-                            ?
-                    ??????????????????
-                    ?   RabbitMQ     ?
-                    ?  (Event Bus)   ?
-                    ??????????????????
-                            ?
-                    ????????????????????
-                    ? Notifications    ?
-                    ????????????????????
+          +--------------------+
+          |   Client Request   |
+          +--------------------+
+                     |
+              +---------------+
+              |    Gateway    |
+              +---------------+
+             /        |        \
+    +-----------+ +-----------+ +-----------+
+    |  Flights  | |  Bookings | |  Payments |
+    +-----------+ +-----------+ +-----------+
+             \        |        /
+              +----------------+
+              |    RabbitMQ    |
+              |   (Event Bus)  |
+              +----------------+
+                     |
+              +---------------+
+              | Notifications |
+              +---------------+
 ```
 
 ### Event Flow
 
-1. **Flight Booked Event**: Booking Service publishes ? Payment Service consumes ? Notification Service publishes
-2. **Payment Processed Event**: Payment Service publishes ? Notification Service consumes
-3. **Notification Sent Event**: Notification Service publishes ? Booking Service consumes (optional)
+1. **Flight Booked Event**: Booking Service publishes → Payment Service consumes → Notification Service publishes follow-up events
+2. **Payment Processed Event**: Payment Service publishes → Notification Service consumes
+3. **Notification Sent Event**: Notification Service publishes → Booking Service consumes (optional)
 
 ---
 
@@ -611,25 +643,25 @@ CREATE DATABASE NotificationDb;
 
 Open separate terminal windows for each service:
 
-#### Flight Service (Port 5001)
+#### Flight Service (Dev HTTPS: 63071, HTTP: 63072)
 ```bash
 cd Services/Flight/AirlineBookingSystem.Fights.Api
 dotnet run
 ```
 
-#### Booking Service (Port 5002)
+#### Booking Service (Dev HTTPS: 7170, HTTP: 5174)
 ```bash
 cd Services/Booking/AirlineBookingSystem.Bookings.Api
 dotnet run
 ```
 
-#### Payment Service (Port 5003)
+#### Payment Service (Dev HTTPS: 58076, HTTP: 58077)
 ```bash
 cd Services/Payment/AirlineBookingSystem.Payments.Api
 dotnet run
 ```
 
-#### Notification Service (Port 5004)
+#### Notification Service (Dev HTTPS: 7169, HTTP: 5173)
 ```bash
 cd Services/Notifications/AirlineBookingSystem.Notifications.Api
 dotnet run
@@ -640,16 +672,16 @@ dotnet run
 Check that all services are running:
 ```bash
 # Flight Service
-curl http://localhost:5001/swagger/ui
+curl http://localhost:63072/swagger/index.html
 
 # Booking Service
-curl http://localhost:5002/swagger/ui
+curl http://localhost:5174/swagger/index.html
 
 # Payment Service
-curl http://localhost:5003/swagger/ui
+curl http://localhost:58077/swagger/index.html
 
 # Notification Service
-curl http://localhost:5004/swagger/ui
+curl http://localhost:5173/swagger/index.html
 ```
 
 ---
@@ -660,23 +692,14 @@ All microservices in the Airline Booking System provide interactive API document
 
 ### Accessing Swagger UI
 
-Once all services are running, access the Swagger UI for each service using the URLs below:
+Once all services are running, access the Swagger UI for each service using the URLs below (matching the launch settings used by `dotnet run`):
 
-#### Flight Service
-- **Swagger UI**: [http://localhost:5001/swagger/ui](http://localhost:5001/swagger/ui)
-- **OpenAPI JSON**: [http://localhost:5001/swagger/v1/swagger.json](http://localhost:5001/swagger/v1/swagger.json)
-
-#### Booking Service
-- **Swagger UI**: [http://localhost:5002/swagger/ui](http://localhost:5002/swagger/ui)
-- **OpenAPI JSON**: [http://localhost:5002/swagger/v1/swagger.json](http://localhost:5002/swagger/v1/swagger.json)
-
-#### Payment Service
-- **Swagger UI**: [http://localhost:5003/swagger/ui](http://localhost:5003/swagger/ui)
-- **OpenAPI JSON**: [http://localhost:5003/swagger/v1/swagger.json](http://localhost:5003/swagger/v1/swagger.json)
-
-#### Notification Service
-- **Swagger UI**: [http://localhost:5004/swagger/ui](http://localhost:5004/swagger/ui)
-- **OpenAPI JSON**: [http://localhost:5004/swagger/v1/swagger.json](http://localhost:5004/swagger/v1/swagger.json)
+| Service | Swagger UI (HTTPS) | Swagger UI (HTTP) | OpenAPI JSON |
+|---------|--------------------|-------------------|--------------|
+| Flight | [https://localhost:63071/swagger/index.html](https://localhost:63071/swagger/index.html) | [http://localhost:63072/swagger/index.html](http://localhost:63072/swagger/index.html) | `https://localhost:63071/swagger/v1/swagger.json` |
+| Booking | [https://localhost:7170/swagger/index.html](https://localhost:7170/swagger/index.html) | [http://localhost:5174/swagger/index.html](http://localhost:5174/swagger/index.html) | `https://localhost:7170/swagger/v1/swagger.json` |
+| Payment | [https://localhost:58076/swagger/index.html](https://localhost:58076/swagger/index.html) | [http://localhost:58077/swagger/index.html](http://localhost:58077/swagger/index.html) | `https://localhost:58076/swagger/v1/swagger.json` |
+| Notification | [https://localhost:7169/swagger/index.html](https://localhost:7169/swagger/index.html) | [http://localhost:5173/swagger/index.html](http://localhost:5173/swagger/index.html) | `https://localhost:7169/swagger/v1/swagger.json` |
 
 ### Using Swagger UI
 
@@ -693,7 +716,7 @@ Once all services are running, access the Swagger UI for each service using the 
 
 ### Example: Testing a Flight Creation Endpoint
 
-1. Open [http://localhost:5001/swagger/ui](http://localhost:5001/swagger/ui)
+1. Open [https://localhost:63071/swagger/index.html](https://localhost:63071/swagger/index.html)
 2. Find the **POST /api/flights** endpoint
 3. Click on it to expand
 4. Click **"Try it out"** button
@@ -709,8 +732,8 @@ Once all services are running, access the Swagger UI for each service using the 
      "availableSeats": 150
    }
    ```
-6. Click **"Execute"** to create the flight
-7. Check the response for success status (200 OK)
+6. Click **"Execute"** to send the request
+7. View the response status, headers, and body
 
 ### Swagger Configuration
 
@@ -745,9 +768,9 @@ The API documentation follows the OpenAPI 3.0 specification, which provides:
 
 ## API Endpoints
 
-### Flight Service (http://localhost:5001)
+### Flight Service ([HTTP](http://localhost:63072) / [HTTPS](https://localhost:63071))
 
-**Swagger Documentation**: [http://localhost:5001/swagger/ui](http://localhost:5001/swagger/ui)
+**Swagger Documentation**: [https://localhost:63071/swagger/index.html](https://localhost:63071/swagger/index.html)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -758,7 +781,7 @@ The API documentation follows the OpenAPI 3.0 specification, which provides:
 
 **Example Request** (Create Flight):
 ```bash
-curl -X POST http://localhost:5001/api/flights \
+curl -X POST http://localhost:63072/api/flights \
   -H "Content-Type: application/json" \
   -d '{
     "flightNumber": "AA100",
@@ -770,9 +793,9 @@ curl -X POST http://localhost:5001/api/flights \
   }'
 ```
 
-### Booking Service (http://localhost:5002)
+### Booking Service ([HTTP](http://localhost:5174) / [HTTPS](https://localhost:7170))
 
-**Swagger Documentation**: [http://localhost:5002/swagger/ui](http://localhost:5002/swagger/ui)
+**Swagger Documentation**: [https://localhost:7170/swagger/index.html](https://localhost:7170/swagger/index.html)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -782,7 +805,7 @@ curl -X POST http://localhost:5001/api/flights \
 
 **Example Request** (Create Booking):
 ```bash
-curl -X POST http://localhost:5002/api/bookings \
+curl -X POST http://localhost:5174/api/bookings \
   -H "Content-Type: application/json" \
   -d '{
     "flightId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
@@ -792,9 +815,9 @@ curl -X POST http://localhost:5002/api/bookings \
   }'
 ```
 
-### Payment Service (http://localhost:5003)
+### Payment Service ([HTTP](http://localhost:58077) / [HTTPS](https://localhost:58076))
 
-**Swagger Documentation**: [http://localhost:5003/swagger/ui](http://localhost:5003/swagger/ui)
+**Swagger Documentation**: [https://localhost:58076/swagger/index.html](https://localhost:58076/swagger/index.html)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -805,7 +828,7 @@ curl -X POST http://localhost:5002/api/bookings \
 
 **Example Request** (Process Payment):
 ```bash
-curl -X POST http://localhost:5003/api/payments \
+curl -X POST http://localhost:58077/api/payments \
   -H "Content-Type: application/json" \
   -d '{
     "bookingId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
@@ -814,9 +837,9 @@ curl -X POST http://localhost:5003/api/payments \
   }'
 ```
 
-### Notification Service (http://localhost:5004)
+### Notification Service ([HTTP](http://localhost:5173) / [HTTPS](https://localhost:7169))
 
-**Swagger Documentation**: [http://localhost:5004/swagger/ui](http://localhost:5004/swagger/ui)
+**Swagger Documentation**: [https://localhost:7169/swagger/index.html](https://localhost:7169/swagger/index.html)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -826,7 +849,7 @@ curl -X POST http://localhost:5003/api/payments \
 
 **Example Request** (Send Notification):
 ```bash
-curl -X POST http://localhost:5004/api/notifications \
+curl -X POST http://localhost:5173/api/notifications \
   -H "Content-Type: application/json" \
   -d '{
     "recipientEmail": "john@example.com",
